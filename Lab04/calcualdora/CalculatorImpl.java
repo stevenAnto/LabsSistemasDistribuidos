@@ -1,4 +1,4 @@
-public class CalculatorImpl extends java.rmi.server.UnicastRemoteObject implements Calculator {
+public class CalculatorImpl extends java.rmi.server.UnicastRemoteObject implements Calculator {//java.rmi.server clase que proporciona fucnionalidades  para la exportaciond e objetos remotos //creacion de stubs
 
   // Implementations must have an explicit constructor
   // in order to declare the RemoteException exception

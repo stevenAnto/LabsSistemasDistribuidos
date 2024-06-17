@@ -6,6 +6,7 @@ package vistas;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -46,7 +47,7 @@ public class ProyectoFrame extends javax.swing.JFrame {
         jLabel5 = new javax.swing.JLabel();
         jTextFechFin = new javax.swing.JTextField();
         jLabel6 = new javax.swing.JLabel();
-        jTextField5 = new javax.swing.JTextField();
+        jTextFieldDepto = new javax.swing.JTextField();
         jButtonNnuevo = new javax.swing.JButton();
         jButtonGuardar = new javax.swing.JButton();
         jButtonEliminar = new javax.swing.JButton();
@@ -94,9 +95,9 @@ public class ProyectoFrame extends javax.swing.JFrame {
 
         jLabel6.setText("Departamento");
 
-        jTextField5.addActionListener(new java.awt.event.ActionListener() {
+        jTextFieldDepto.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextField5ActionPerformed(evt);
+                jTextFieldDeptoActionPerformed(evt);
             }
         });
 
@@ -179,7 +180,7 @@ public class ProyectoFrame extends javax.swing.JFrame {
                                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                                         .addComponent(jLabel6)
                                         .addGap(36, 36, 36)
-                                        .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, 178, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addComponent(jTextFieldDepto, javax.swing.GroupLayout.PREFERRED_SIZE, 178, javax.swing.GroupLayout.PREFERRED_SIZE))
                                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                                         .addComponent(jLabel2)
                                         .addGap(36, 36, 36)
@@ -238,7 +239,7 @@ public class ProyectoFrame extends javax.swing.JFrame {
                         .addGap(18, 18, 18)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jLabel6)
-                            .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                            .addComponent(jTextFieldDepto, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 261, javax.swing.GroupLayout.PREFERRED_SIZE)))
@@ -272,9 +273,9 @@ public class ProyectoFrame extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jTextFechFinActionPerformed
 
-    private void jTextField5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField5ActionPerformed
+    private void jTextFieldDeptoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextFieldDeptoActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField5ActionPerformed
+    }//GEN-LAST:event_jTextFieldDeptoActionPerformed
 
     private void jButtonNnuevoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonNnuevoActionPerformed
         // TODO add your handling code here:
@@ -293,18 +294,26 @@ public class ProyectoFrame extends javax.swing.JFrame {
             String nombre = jTextFieldNombre.getText();
             String fechaInicio = jTextFieldFechaInicio.getText();
             String fechaFin = jTextFechFin.getText();
-            String idDepartamento = jTextField5.getText(); // Este campo no está en tu descripción, asumo que es el ID del departamento
+            String idDepartamento = jTextFieldDepto.getText(); // Este campo no está en tu descripción, asumo que es el ID del departamento
 
             // Establecer la conexión
             conn = DriverManager.getConnection(url, usuario, clave);
 
+            // Verificar si el id ya existe en la base de datos
+            st = conn.createStatement();
+            rs = st.executeQuery("SELECT * FROM proyecto WHERE idproy = '" + id + "'");
+            boolean existe = rs.next();
+
             // Preparar la consulta SQL
-            String insertQuery = "INSERT INTO proyecto (idproy, nombre, fec_inicio, fec_termino, iddpto) "
-                    + "VALUES ('" + id + "', '" + nombre + "', '" + fechaInicio + "', '" + fechaFin + "', '" + idDepartamento + "')";
+            String sql;
+            if (existe) {
+                sql = "UPDATE proyecto SET nombre = '" + nombre + "', fec_inicio = '" + fechaInicio + "', fec_termino = '" + fechaFin + "', iddpto = '" + idDepartamento + "' WHERE idproy = '" + id + "'";
+            } else {
+                sql = "INSERT INTO proyecto (idproy, nombre, fec_inicio, fec_termino, iddpto) VALUES ('" + id + "', '" + nombre + "', '" + fechaInicio + "', '" + fechaFin + "', '" + idDepartamento + "')";
+            }
 
             // Ejecutar la consulta SQL
-            st = conn.createStatement();
-            st.executeUpdate(insertQuery);
+            st.executeUpdate(sql);
 
             // Mostrar mensaje de éxito
             JOptionPane.showMessageDialog(null, "Registro guardado correctamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
@@ -316,6 +325,9 @@ public class ProyectoFrame extends javax.swing.JFrame {
         } finally {
             // Cerrar conexiones
             try {
+                if (rs != null) {
+                    rs.close();
+                }
                 if (st != null) {
                     st.close();
                 }
@@ -330,11 +342,40 @@ public class ProyectoFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_jButtonGuardarActionPerformed
 
     private void jButtonEliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonEliminarActionPerformed
-        // TODO add your handling code here:
+        DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
+        // Obtener el índice de la fila seleccionada
+        int selectedRowIndex = jTable1.getSelectedRow();
+
+        // Obtener el valor de la columna "Id Ing" de la fila seleccionada
+        Object idIngValue = model.getValueAt(selectedRowIndex, 0);
+        System.out.println("idIngValue " + idIngValue);
+        String idConvertido = String.valueOf(idIngValue);
+        // Asignar el nuevo modelo a la tabla
+        jTable1.setModel(model);
+        model.setRowCount(0);
+        model.setColumnIdentifiers(new Object[]{"Id Ing", "Especialidad", "Cargo", "Id Pro", "Nombre Proyecto"});
+        eliminarRegistro(idConvertido);
+
+        cargarTablas();
     }//GEN-LAST:event_jButtonEliminarActionPerformed
 
     private void jButtonActualizarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonActualizarActionPerformed
-        // TODO add your handling code here:
+        DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
+        // Obtener el índice de la fila seleccionada
+        int selectedRowIndex = jTable1.getSelectedRow();
+
+        // Obtener el valor de la columna "Id Ing" de la fila seleccionada
+        Object idIngValue = model.getValueAt(selectedRowIndex, 0);
+        Object nombre = model.getValueAt(selectedRowIndex, 1);
+        Object fechInicio = model.getValueAt(selectedRowIndex, 2);
+        Object fechFin = model.getValueAt(selectedRowIndex, 3);
+        Object idDpto = model.getValueAt(selectedRowIndex, 4);
+        this.jTextFieldId.setText(String.valueOf(idIngValue));
+        this.jTextFieldNombre.setText(String.valueOf(nombre));
+        this.jTextFieldFechaInicio.setText(String.valueOf(fechInicio));
+        this.jTextFechFin.setText(String.valueOf(fechFin));
+        this.jTextFieldDepto.setText(String.valueOf(idDpto));
+
     }//GEN-LAST:event_jButtonActualizarActionPerformed
 
     private void jButtonVerIngenierosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonVerIngenierosActionPerformed
@@ -344,7 +385,7 @@ public class ProyectoFrame extends javax.swing.JFrame {
 
         // Obtener el valor de la columna "Id Ing" de la fila seleccionada
         Object idIngValue = model.getValueAt(selectedRowIndex, 0);
-        System.out.println("idIngValue "+idIngValue);
+        System.out.println("idIngValue " + idIngValue);
         String idConvertido = String.valueOf(idIngValue);
         // Asignar el nuevo modelo a la tabla
         jTable1.setModel(model);
@@ -412,7 +453,7 @@ public class ProyectoFrame extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTable jTable1;
     private javax.swing.JTextField jTextFechFin;
-    private javax.swing.JTextField jTextField5;
+    private javax.swing.JTextField jTextFieldDepto;
     private javax.swing.JTextField jTextFieldFechaInicio;
     private javax.swing.JTextField jTextFieldId;
     private javax.swing.JTextField jTextFieldNombre;
@@ -484,7 +525,7 @@ public class ProyectoFrame extends javax.swing.JFrame {
             ResultSet rs = st.executeQuery("SELECT ingeniero.iding, ingeniero.especialidad, "
                     + "ingeniero.cargo, ingeniero.idproy, proyecto.nombre as nombre_proyecto "
                     + "FROM ingeniero JOIN proyecto ON ingeniero.idproy = proyecto.idproy "
-                    + "WHERE proyecto.idproy ="+idProyecto);
+                    + "WHERE proyecto.idproy =" + idProyecto);
 
             // Llenar la tabla con los resultados de la consulta
             DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
@@ -513,6 +554,29 @@ public class ProyectoFrame extends javax.swing.JFrame {
         jTextFieldNombre.setText("");
         jTextFieldFechaInicio.setText("");
         jTextFechFin.setText("");
-        jTextField5.setText("");
+        jTextFieldDepto.setText("");
+    }
+
+    private void eliminarRegistro(String idProyecto) {
+        String url = "jdbc:postgresql://localhost/proyecto_empresa2";
+        String user = "postgres";
+        String password = "12345";
+        String sql = "DELETE FROM proyecto WHERE idproy = ?";
+
+        try (Connection conn = DriverManager.getConnection(url, user, password); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            int id = Integer.parseInt(idProyecto);  // Convertir idProyecto a entero
+            pstmt.setInt(1, id);
+
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Proyecto eliminado exitosamente.");
+            } else {
+                System.out.println("No se encontró el proyecto con el id especificado.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 }
